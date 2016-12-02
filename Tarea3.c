@@ -9,34 +9,44 @@
 #define ESC 3
 #define LEC 2
 
-int escritor_c=0,lector_c=0,archivo=5;
-sem_t mutex_x,mutex_y,mutex_lector,mutex_escritor;//semáforos
-pthread_t w[ESC],r[LEC];//del 0 al índice
 char text[100];
 
+//threads
+pthread_t w[ESC],r[LEC];
+
+//Semáforos
+sem_t mutex_x,mutex_y;
+sem_t mutex_lector,mutex_escritor;
+
 /******************************************************************************/
 
-void reader(){
+void read(){
+  sem_wait(&mutex_lector);
+  sem_wait(&mutex_x);
+  sem_post(&mutex_lector);
+
   printf("\n******************************\nLECTOR");
+  printf("\nleyendo...");
 
-  //lee
-  printf("\n%d",archivo);
+  sem_post(&mutex_x);
 
-}//end reader
+}//end read
 
 /******************************************************************************/
 
-void writer(){
-  sem_wait(&mutex_escritor);
+void write(){
+  sem_wait(&mutex_lector);
+  sem_wait(&mutex_x);
 
-  printf("\n******************************");
-  //inicia escritor
-  printf("\nESCRITOR\nEscriba algo:\n");
-  //escribe
+  printf("\n*****************************\nESCRITOR");
+  printf("\nEscriba algo:");
   fgets(text,sizeof(text),stdin);
+  printf("\nprint: %s",text);
 
-  sem_post(&mutex_escritor);
-}//end writer
+  sem_post(&mutex_x);
+  sem_post(&mutex_lector);
+
+}//end write
 
 /******************************************************************************/
 
@@ -50,34 +60,34 @@ int main(){
 
   //CREA
 
-  pthread_create(&r[0],NULL,(void *)reader,NULL);//Lector
-  pthread_create(&w[0],NULL,(void *)writer,NULL);
-  pthread_create(&w[1],NULL,(void *)writer,NULL);
-  pthread_create(&w[2],NULL,(void *)writer,NULL);
-  pthread_create(&r[1],NULL,(void *)reader,NULL);//Lector
-  pthread_create(&r[2],NULL,(void *)reader,NULL);//Lector
-  pthread_create(&w[3],NULL,(void *)writer,NULL);
-  pthread_create(&w[4],NULL,(void *)writer,NULL);
+  pthread_create(&r[0],NULL,(void *)read,NULL);//Lector
+  pthread_create(&w[0],NULL,(void *)write,NULL);
+  pthread_create(&w[1],NULL,(void *)write,NULL);
+  pthread_create(&w[2],NULL,(void *)write,NULL);
+  pthread_create(&r[1],NULL,(void *)read,NULL);//Lector
+  pthread_create(&r[2],NULL,(void *)read,NULL);//Lector
+  pthread_create(&w[3],NULL,(void *)write,NULL);
+  pthread_create(&w[4],NULL,(void *)write,NULL);
 
   //crea lector
   /*for(a=0;a<=LEC;a++){//LEC=2
-    pthread_create(&r[a],NULL,(void *)reader,NULL);
+    pthread_create(&r[a],NULL,(void *)read,NULL);
   }
 
   //crea escritor
   for(b=0;b<=ESC;b++){//ESC=3
-    pthread_create(&w[b],NULL,(void *)writer,NULL);
+    pthread_create(&w[b],NULL,(void *)write,NULL);
   }*/
 
   //ESPERA A QUE TERMINE
 
   //espera lector
-  for(a=0;a<=LEC;a++){
+  for(a=0;a<=LEC+1;a++){
     pthread_join(r[a],NULL);
   }
 
   //espera escritor
-  for(b=0;b<=ESC;b++){
+  for(b=0;b<=ESC+1;b++){
     pthread_join(w[b],NULL);
   }
 
