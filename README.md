@@ -6,7 +6,7 @@
 
 1. Dirigirse al directorio del código
 ```
-cd Tarea3_Elicer_201473539-1/src/
+cd Tarea_3_SO/src/
 ```
 
 1. Compilar el archivo Tarea3.c
