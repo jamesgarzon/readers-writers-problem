@@ -6,14 +6,12 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define ESC 3
-#define LEC 2
-
-char text[100];
+char texto[100];
 int contador=0;
+FILE *archivo;
 
 //threads
-pthread_t w[ESC],r[LEC];
+pthread_t w[50],r[50];
 
 //Semáforos
 sem_t mutex;
@@ -23,10 +21,12 @@ sem_t lector;
 
 void read(){
   sem_wait(&lector);
-
+  //ZONA CRITICA
+  archivo = fopen("entrada.txt", "r");
   printf("\n******************************\nLECTOR");
   printf("\nleyendo...");
-
+  fclose(archivo);
+  //FINAL ZONA CRITICA
   sem_post(&lector);
 }//end read
 
@@ -38,10 +38,14 @@ void write(){
   if(contador==1){
     sem_wait(&lector);
   }
+  //ZONA CRITICA
   printf("\n*****************************\nESCRITOR");
+  archivo=fopen("entrada.txt","a");
   printf("\nEscriba algo:");
-  fgets(text,sizeof(text),stdin);
-  printf("\nprint: %s",text);
+  fgets(texto,sizeof(texto),stdin);
+  fputs(texto,archivo);
+  fclose(archivo);
+  //FINAL ZONA CRITICA
   sem_post(&mutex);
 
   sem_wait(&mutex);
@@ -54,44 +58,70 @@ void write(){
 
 /******************************************************************************/
 
-int main(){
+int proceso(int ESC,int LEC){
   //Se inicializan los semáforos en 1
   sem_init(&mutex,0,1);
   sem_init(&lector,0,1);
   int a,b;
 
-  //CREA
-
-  pthread_create(&r[0],NULL,(void *)read,NULL);//Lector
+  //Primero se crea 1 único escritor
   pthread_create(&w[0],NULL,(void *)write,NULL);
-  pthread_create(&w[1],NULL,(void *)write,NULL);
-  pthread_create(&w[2],NULL,(void *)write,NULL);
-  pthread_create(&r[1],NULL,(void *)read,NULL);//Lector
-  pthread_create(&r[2],NULL,(void *)read,NULL);//Lector
-  pthread_create(&w[3],NULL,(void *)write,NULL);
-  pthread_create(&w[4],NULL,(void *)write,NULL);
 
-  //crea lector
-  /*for(a=0;a<=LEC;a++){//LEC=2
+  //Luego se crean los lectores
+  for(a=0;a<=LEC;a++){
     pthread_create(&r[a],NULL,(void *)read,NULL);
   }
 
-  //crea escritor
-  for(b=0;b<=ESC;b++){//ESC=3
+  //Finalmente el resto de los escritores
+  for(b=1;b<=ESC;b++){
     pthread_create(&w[b],NULL,(void *)write,NULL);
-  }*/
+  }
 
-  //ESPERA A QUE TERMINE
-
-  //espera lector
-  for(a=0;a<=LEC+1;a++){
+  //Espera lectores
+  for(a=0;a<=LEC;a++){
     pthread_join(r[a],NULL);
   }
 
-  //espera escritor
-  for(b=0;b<=ESC+1;b++){
+  //Espera escritores
+  for(b=0;b<=ESC;b++){
     pthread_join(w[b],NULL);
   }
+
+  printf("\n");
+  return 0;
+}
+
+/******************************************************************************/
+
+int main(){
+  char caja[100];
+  int writer,reader;
+
+  //LECTOR
+  printf("Ingrese la cantidad de lectores:\n");
+  fgets(caja,sizeof(texto),stdin);
+  sscanf(caja,"%d",&reader);
+
+  while(reader==0 || reader>20){
+    printf("Ingrese un numero valido menor a 20\n");
+    fgets(caja,sizeof(texto),stdin);
+    sscanf(caja,"%d",&reader);
+  }
+  //END LECTOR
+
+  //ESCRITOR
+  printf("Ingrese la cantidad de escritores:\n");
+  fgets(caja,sizeof(texto),stdin);
+  sscanf(caja,"%d",&writer);
+
+  while(writer==0 || writer>20){
+    printf("Ingrese un numero valido menor a 20\n");
+    fgets(caja,sizeof(texto),stdin);
+    sscanf(caja,"%d",&writer);
+  }
+  //END ESCRITOR
+
+  proceso(writer-1,reader-1);
 
   return(0);
 }
