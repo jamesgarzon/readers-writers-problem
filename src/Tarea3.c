@@ -23,17 +23,17 @@ void read(){
   sem_wait(&queue);
     sem_wait(&lector);
       sem_wait(&mutex);
-        //ZONA CRITICA
-        archivo = fopen("entrada.txt", "a");
-        printf("\n******************************\nLECTOR");
-        printf("\nLeyendo...");
-        for(k=0;k<100;k++){
-          fputs("LECTOR.\n",archivo);
-        }
-        fclose(archivo);
-        //FINAL ZONA CRITICA
-      sem_post(&mutex);
     sem_post(&lector);
+        //ZONA CRITICA
+      archivo = fopen("entrada.txt", "a");
+      printf("\n******************************\nLECTOR");
+      printf("\nLeyendo...");
+      for(k=0;k<100;k++){
+        fputs("LECTOR.\n",archivo);
+      }
+      fclose(archivo);
+      //FINAL ZONA CRITICA
+    sem_post(&mutex);
   sem_post(&queue);
 }
 
