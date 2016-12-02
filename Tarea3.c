@@ -24,11 +24,11 @@ void read(){
     sem_wait(&lector);
       sem_wait(&mutex);
         //ZONA CRITICA
-        archivo = fopen("entrada.txt", "r");
+        archivo = fopen("entrada.txt", "a");
         printf("\n******************************\nLECTOR");
         printf("\nLeyendo...");
-        for(k=0;k<200;k++){
-          fputs("HOLA.\n",archivo);
+        for(k=0;k<100;k++){
+          fputs("LECTOR.\n",archivo);
         }
         fclose(archivo);
         //FINAL ZONA CRITICA
@@ -50,8 +50,8 @@ void write(){
       printf("\n******************************\nESCRITOR");
       archivo=fopen("entrada.txt","a");
       printf("\nEscribiendo...");
-      for(k=0;k<200;k++){
-        fputs("HOLA.",archivo);
+      for(k=0;k<10;k++){
+        fputs("ESCRITOR.\n",archivo);
       }
       fclose(archivo);
       //FINAL ZONA CRITICA
@@ -112,7 +112,7 @@ int main(){
   sscanf(caja,"%d",&reader);
 
   while(reader==0 || reader>100){
-    printf("Ingrese un numero valido menor a 20\n");
+    printf("Ingrese un numero valido menor a 100\n");
     fgets(caja,sizeof(texto),stdin);
     sscanf(caja,"%d",&reader);
   }
@@ -124,7 +124,7 @@ int main(){
   sscanf(caja,"%d",&writer);
 
   while(writer==0 || writer>100){
-    printf("Ingrese un numero valido menor a 20\n");
+    printf("Ingrese un numero valido menor a 100\n");
     fgets(caja,sizeof(texto),stdin);
     sscanf(caja,"%d",&writer);
   }
