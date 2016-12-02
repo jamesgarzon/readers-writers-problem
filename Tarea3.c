@@ -7,73 +7,82 @@
 #include <semaphore.h>
 
 char texto[100];
-int contador=0;
+int contador=0,k;
 FILE *archivo;
 
-//threads
-pthread_t w[50],r[50];
+//Threads
+pthread_t w[200],r[200];
 
 //Semáforos
-sem_t mutex;
-sem_t lector;
+sem_t mutex, queue;
+sem_t lector, escritor;
 
 /******************************************************************************/
 
 void read(){
-  sem_wait(&lector);
-  //ZONA CRITICA
-  archivo = fopen("entrada.txt", "r");
-  printf("\n******************************\nLECTOR");
-  printf("\nleyendo...");
-  fclose(archivo);
-  //FINAL ZONA CRITICA
-  sem_post(&lector);
-}//end read
+  sem_wait(&queue);
+    sem_wait(&lector);
+      sem_wait(&mutex);
+        //ZONA CRITICA
+        archivo = fopen("entrada.txt", "r");
+        printf("\n******************************\nLECTOR");
+        printf("\nLeyendo...");
+        for(k=0;k<200;k++){
+          fputs("HOLA.\n",archivo);
+        }
+        fclose(archivo);
+        //FINAL ZONA CRITICA
+      sem_post(&mutex);
+    sem_post(&lector);
+  sem_post(&queue);
+}
 
 /******************************************************************************/
 
 void write(){
-  sem_wait(&mutex);
-  contador++;
-  if(contador==1){
-    sem_wait(&lector);
-  }
-  //ZONA CRITICA
-  printf("\n*****************************\nESCRITOR");
-  archivo=fopen("entrada.txt","a");
-  printf("\nEscriba algo:");
-  fgets(texto,sizeof(texto),stdin);
-  fputs(texto,archivo);
-  fclose(archivo);
-  //FINAL ZONA CRITICA
-  sem_post(&mutex);
+  sem_wait(&escritor);
+    contador++;
+    if(contador==1){
+      sem_wait(&lector);
+    }
+    sem_wait(&mutex);
+      //ZONA CRITICA
+      printf("\n******************************\nESCRITOR");
+      archivo=fopen("entrada.txt","a");
+      printf("\nEscribiendo...");
+      for(k=0;k<200;k++){
+        fputs("HOLA.",archivo);
+      }
+      fclose(archivo);
+      //FINAL ZONA CRITICA
+    sem_post(&mutex);
+  sem_post(&escritor);
 
-  sem_wait(&mutex);
-  contador--;
-  if(contador==0){
-    sem_post(&lector);
-  }
-  sem_post(&mutex);
-}//end write
+  sem_wait(&escritor);
+    contador--;
+    if(contador==0){
+      sem_post(&lector);
+    }
+  sem_post(&escritor);
+}
 
 /******************************************************************************/
 
 int proceso(int ESC,int LEC){
   //Se inicializan los semáforos en 1
   sem_init(&mutex,0,1);
+  sem_init(&queue,0,1);
   sem_init(&lector,0,1);
+  sem_init(&escritor,0,1);
   int a,b;
 
-  //Primero se crea 1 único escritor
-  pthread_create(&w[0],NULL,(void *)write,NULL);
-
-  //Luego se crean los lectores
+  //Se crean los lectores
   for(a=0;a<=LEC;a++){
     pthread_create(&r[a],NULL,(void *)read,NULL);
   }
 
-  //Finalmente el resto de los escritores
-  for(b=1;b<=ESC;b++){
+  //Luego los escritores
+  for(b=0;b<=ESC;b++){
     pthread_create(&w[b],NULL,(void *)write,NULL);
   }
 
@@ -102,7 +111,7 @@ int main(){
   fgets(caja,sizeof(texto),stdin);
   sscanf(caja,"%d",&reader);
 
-  while(reader==0 || reader>20){
+  while(reader==0 || reader>100){
     printf("Ingrese un numero valido menor a 20\n");
     fgets(caja,sizeof(texto),stdin);
     sscanf(caja,"%d",&reader);
@@ -114,7 +123,7 @@ int main(){
   fgets(caja,sizeof(texto),stdin);
   sscanf(caja,"%d",&writer);
 
-  while(writer==0 || writer>20){
+  while(writer==0 || writer>100){
     printf("Ingrese un numero valido menor a 20\n");
     fgets(caja,sizeof(texto),stdin);
     sscanf(caja,"%d",&writer);
