@@ -10,52 +10,54 @@
 #define LEC 2
 
 char text[100];
+int contador=0;
 
 //threads
 pthread_t w[ESC],r[LEC];
 
 //Semáforos
-sem_t mutex_x,mutex_y;
-sem_t mutex_lector,mutex_escritor;
+sem_t mutex;
+sem_t lector;
 
 /******************************************************************************/
 
 void read(){
-  sem_wait(&mutex_lector);
-  sem_wait(&mutex_x);
-  sem_post(&mutex_lector);
+  sem_wait(&lector);
 
   printf("\n******************************\nLECTOR");
   printf("\nleyendo...");
 
-  sem_post(&mutex_x);
-
+  sem_post(&lector);
 }//end read
 
 /******************************************************************************/
 
 void write(){
-  sem_wait(&mutex_lector);
-  sem_wait(&mutex_x);
-
+  sem_wait(&mutex);
+  contador++;
+  if(contador==1){
+    sem_wait(&lector);
+  }
   printf("\n*****************************\nESCRITOR");
   printf("\nEscriba algo:");
   fgets(text,sizeof(text),stdin);
   printf("\nprint: %s",text);
+  sem_post(&mutex);
 
-  sem_post(&mutex_x);
-  sem_post(&mutex_lector);
-
+  sem_wait(&mutex);
+  contador--;
+  if(contador==0){
+    sem_post(&lector);
+  }
+  sem_post(&mutex);
 }//end write
 
 /******************************************************************************/
 
 int main(){
   //Se inicializan los semáforos en 1
-  sem_init(&mutex_x,0,1);
-  sem_init(&mutex_y,0,1);
-  sem_init(&mutex_escritor,0,1);
-  sem_init(&mutex_lector,0,1);
+  sem_init(&mutex,0,1);
+  sem_init(&lector,0,1);
   int a,b;
 
   //CREA
